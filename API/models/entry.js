@@ -17,8 +17,7 @@ const entrySchema = new Schema({
     },
     user : {
         type: mongoose.Types.ObjectId, 
-        ref: 'User', 
-        default: ""
+        ref: 'User'
     }
 })
 
