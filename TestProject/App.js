@@ -1,8 +1,9 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, TouchableHighlight, TouchableOpacity, View, Dimensions, Pressable, TextInput } from "react-native";
 import { useState, useEffect } from 'react'
+import { api } from './config.js'
 
-const API_BASE = 'http://localhost:3001'
+const API_BASE = api
 
 export default function App() {
 	const [todos, setTodos] = useState([]);
@@ -125,145 +126,136 @@ const width = Dimensions.get('window').width;
 console.log(width);
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: colors.darkAlt,
-		alignItems: "center",
-		justifyContent: "flex-start",
-		padding: 32
-	},
-	header: {
-		fontSize: 40,
-		color: colors.light,
-		fontWeight: 'bold',
-		marginBottom: 32,
-	},
-	subHeader: {
-		fontSize: 18,
-		fontWeight: 400,
-		color: colors.lightAlt,
-		textTransform: "uppercase",
-		marginBottom: 16
-	},
-	todo: {
-		position: "relative",
-		alignSelf: "center",
-		backgroundColor: colors.dark,
-		padding: 16,
-		borderRadius: 16,
-		display: "flex",
-		flex: 1,
-		flexDirection: "row",
-		transition: 0.5,
-		cursor: "pointer",
-		marginBottom: 16,
-	},
-	todoText: {
-		color: colors.light
-	},
-	checkBox: {
-		width: 20,
-		height: 20,
-		marginRight: 16,
-		borderRadius: 10,
-		backgroundColor: colors.darkAlt,
-		borderWidth: 1,
-		borderColor: 'transparent',
-		overflow: 'hidden',
-		transitionDuration: 400,
-	},
-	isComplete: {
-		borderColor: 'transparent',
-		backgroundImage: 'linear-gradient(to bottom,'+ colors.primary +',' + colors.secondary + ')',
-	},
-	textComplete: {
-		textDecorationLine: "line-through"
-	},
-	deleteBox: {
-		alignItems: 'flex-end',
-		color: colors.light,
-		backgroundColor: "#AF1E2D",
-		width: 24,
-		height: 24,
-		borderRadius: '50%',
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		fontWeight: 700,
-		marginLeft: 16
-	},
-	addPopup: {
-		position: 'fixed',
-		bottom: 32,
-		right: 32,
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		cursor: "pointer",
-
-		width: 64,
-		height: 64,
-		borderRadius: 999,
-		backgroundColor: colors.primary
-	},
-	popupX: {
-		fontSize: 28,
-		fontWeight: 900,
-		color: colors.light,
-	},
-	popup: {
+    container: {
+        flex: 1,
+        backgroundColor: colors.darkAlt,
+        alignItems: "center",
+        justifyContent: "flex-start",
+        padding: 32
+    },
+    header: {
+        fontSize: 40,
+        color: colors.light,
+        fontWeight: 'bold',
+        marginBottom: 32,
+    },
+    subHeader: {
+        fontSize: 18,
+        fontWeight: '400',
+        color: colors.lightAlt,
+        textTransform: "uppercase",
+        marginBottom: 16,
+    },
+    todo: {
+        position: "relative",
+        alignSelf: "center",
+        backgroundColor: colors.dark,
+        padding: 16,
+        borderRadius: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 16,
+    },
+    todoText: {
+        color: colors.light
+    },
+    checkBox: {
+        width: 20,
+        height: 20,
+        marginRight: 16,
+        borderRadius: 10,
+        backgroundColor: colors.darkAlt,
+        borderWidth: 1,
+        borderColor: 'transparent',
+        overflow: 'hidden',
+        transitionDuration: 400,
+    },
+    isComplete: {
+        backgroundColor: colors.primary,
+    },
+    textComplete: {
+        textDecorationLine: "line-through"
+    },
+    deleteBox: {
+        alignItems: 'flex-end',
+        color: colors.light,
+        backgroundColor: "#AF1E2D",
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: '700',
+        marginLeft: 16
+    },
+    addPopup: {
+        position: 'absolute',
+        bottom: 32,
+        right: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: colors.primary
+    },
+    popupX: {
+        fontSize: 28,
+        fontWeight: '900',
+        color: colors.light,
+    },
+    popup: {
 		position: 'absolute',
 		top: '50%',
 		left: '50%',
-		transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
-		width: '100%',
-		maxWidth: 400,
+		transform: [{ translateX: -175 }],
+		width: 400,
 		backgroundColor: '#F5F5F5',
 		padding: 32,
 		borderRadius: 16,
 		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.8,
 		shadowRadius: 32,
 		elevation: 8,
-	},
-	closePopup: {
-		position: 'absolute',
-		top: 16,
-		right: 16,
-		width: 20,
-		height: 20,
-		fontSize: 20,
-		color: '#000',
-		cursor: 'pointer',
-	},
-	popupText: {
-		color: '#000',
-		marginBottom: 16,
-		fontWeight: '400',
-		textTransform: 'uppercase',
-	},
-	addTodoInput: {
-		backgroundColor: '#FFF',
-		padding: 16,
-		borderRadius: 16,
-		width: '100%',
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.24,
-		shadowRadius: 24,
-		fontSize: 20,
-	},
-	button: {
-		paddingVertical: 16,
-		paddingHorizontal: 32,
-		borderRadius: 999,
-		backgroundColor: colors.primary,
-		fontWeight: '700',
-		textTransform: 'uppercase',
-		fontSize: 18,
-		marginTop: 16,
-		textAlign: 'center',
-		cursor: 'pointer',
-	},
+    },
+    closePopup: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        width: 20,
+        height: 20,
+        fontSize: 20,
+        color: '#000',
+        cursor: 'pointer',
+    },
+    popupText: {
+        color: '#000',
+        marginBottom: 16,
+        fontWeight: '400',
+        textTransform: 'uppercase',
+    },
+    addTodoInput: {
+        backgroundColor: '#FFF',
+        padding: 16,
+        borderRadius: 16,
+        width: '100%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.24,
+        shadowRadius: 24,
+        fontSize: 20,
+    },
+    button: {
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        borderRadius: 999,
+        backgroundColor: colors.primary,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        fontSize: 18,
+        marginTop: 16,
+        textAlign: 'center',
+        cursor: 'pointer',
+    },
 });
