@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 const url = require('./config.js');
 
 const app = express();
@@ -9,6 +10,7 @@ app.use(express.json());
 app.use(cors());
 
 const Entry = require('./models/entry');
+const User = require('./models/user');
 
 
 mongoose.connect(url ,{
@@ -24,17 +26,73 @@ db.once('open', function () {
     console.log('Database connected!');
 });
 
-app.get('/todo', async (req, res) => {
+app.get('/user', async (req, res) =>{
+    const users = await User.find()
+
+    res.json(users);
+})
+
+app.post('/user/login', async (req , res) => {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username });
+    if (!user) {
+        return res.status(401).json({ message: 'Invalid Username' });
+    }
+
+    console.log(user)
+    console.log(password)
+
+    const passwordValidation = await bcrypt.compare(password, user.password);
+    if (!passwordValidation){
+        return res.status(401).json({ message: 'Invalid Password' });
+    }
+
+    res.json(user)
+})
+
+app.post('/user/register', async (req, res) => {
+    const { username, password, email } = req.body;
+    if(!username || !password || !email){
+        console.log('Registration failed')
+        return res.status(500).json({message: 'Registration Failed: required fields are empty'});
+    } 
+
+    const existingUser = await User.findOne({ username })
+    if(existingUser){
+        console.log('User Exists');
+        return res.status(500).json({message: 'Registration Failed: User exists'});
+    }
+
+    //hashing is handled in the schema
+    const newUser = new User({
+        username,
+        password,
+        email
+    })
+
+    await newUser.save();
+    res.json(newUser);
+})
+
+/* app.get('/todo', async (req, res) => {
     const entries = await Entry.find({user: "6477bcb0a0d02bb3e2a329a8"});
+
+    res.json(entries);
+}) */
+
+app.get('/todo/:token', async (req, res) => {
+    if(req.params.token == ''){return;}
+    const entries = await Entry.find({user: req.params.token});
 
     res.json(entries);
 })
 
-app.post('/todo/new', (req, res) => {
+app.post('/todo/:token/new', (req, res) => {
     const entry = new Entry({
         text: req.body.text,
         /* Change user to be a user id via token in the future */
-        user: "6477bcb0a0d02bb3e2a329a8"
+        user: req.params.token
     })
 
     entry.save();

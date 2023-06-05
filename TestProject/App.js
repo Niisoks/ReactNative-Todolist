@@ -1,25 +1,66 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, TouchableHighlight, TouchableOpacity, View, Dimensions, Pressable, TextInput } from "react-native";
 import { useState, useEffect } from 'react'
-import { api } from './config.js'
+import * as SecureStore from 'expo-secure-store';
+import { api } from './config'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = api
+const API_BASE = 'http://localhost:3001'
+
+const Token = null
 
 export default function App() {
 	const [todos, setTodos] = useState([]);
 	const [popupActive, setPopupActive] = useState(false);
+	const [loginActive, setLoginActive] = useState(false);
+	const [registerActive, setRegisterActive] = useState(false);
+
 	const [newTodo, setNewTodo] = useState('');
 
-	useEffect(() => {
-		const GetTodos = async () => {
-			await fetch(API_BASE + '/todo')
-				.then(res => res.json())
-				.then(data => setTodos(data))
-				.catch(err => console.error('Error: ', err))
-		}
+	const [regEmail, setRegEmail] = useState('');
+	const [regUsername, setRegUsername] = useState('');
+	const [regPassword, setRegPassword] = useState('');
 
-		GetTodos();
-	}, [])
+
+	const [username, setUsername] = useState('');
+	const [password, setPassword] = useState('')
+
+	const [token, setToken] = useState('')
+
+	useEffect(() => {
+		const getTokenAndTodos = async () => {
+			const newToken = await AsyncStorage.getItem('token');
+			if (newToken) {
+				console.log('logged in');
+				setToken(newToken);
+				GetTodos();
+			} else {
+			console.log('not logged in');
+			}
+		};
+	
+		getTokenAndTodos();
+	}, [token]);
+
+	const GetTodos = async () => {
+		try {
+			console.log(token);
+			if(!token) return;
+			const response = await fetch(API_BASE + '/todo/' + token);
+			const data = await response.json();
+			setTodos(data);
+		} catch (e) {
+			console.error('error', e);
+		}
+	};
+
+	const logout = async () => {
+		await AsyncStorage.removeItem('token');
+		setToken('');
+		setTodos([]);
+		setUsername('');
+		setPassword('');
+	}
 
 	const completeTodo = async id => {
 		const data = await fetch(API_BASE + '/todo/complete/' + id, {
@@ -44,28 +85,79 @@ export default function App() {
 	}
 
 	const addTodo = async () => {
-		if(!newTodo){
-			return;
-		}
-		const data = await fetch(API_BASE + '/todo/new', {
+
+		const data = await fetch(API_BASE + '/todo/' + token + '/new', {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
 			},
 			body: JSON.stringify({
-				text: newTodo
+				text: newTodo,
 			})
 		}).then(res => res.json());
 
 		setTodos([...todos, data]);
 		setPopupActive(false);
-		setNewTodo(null);
+		setNewTodo('');
+	}
+
+	const login = async () => {
+		if(!username || !password){
+			return;
+		}
+		const data = await fetch(API_BASE + '/user/login', {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({
+				username: username,
+				password: password
+			})
+		}).then(res => res.json());
+
+		const newToken = data._id;
+		setToken(newToken)
+		if(newToken){
+			await AsyncStorage.setItem('token', newToken)
+		}
+
+		setLoginActive(false);
+		setUsername('');
+		setPassword('');
+	}
+
+	const register = async () => {
+		if(!regUsername || !regPassword || !regEmail){
+			return;
+		}
+		const data = await fetch(API_BASE + '/user/register', {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({
+				username: regUsername,
+				password: regPassword,
+				email: regEmail
+			})
+		}).then(res => res.json());
+
+		const newToken = data._id;
+		setToken(newToken)
+		if(newToken){
+			await AsyncStorage.setItem('token', newToken)
+		}
+
+		setRegisterActive(false);
+		setUsername('');
+		setPassword('');
 	}
 
 	return (
 		<View style={styles.container}>
-			<Text style={styles.header}>This is a header</Text>
-			<Text style={styles.subHeader}>This is a sub header</Text>
+			<Text style={styles.header}>To-do list</Text>
+			<Text style={styles.subHeader}>made in react native</Text>
 
 			<View style={styles.todoList}>
 				{todos.map(todo => (
@@ -84,8 +176,21 @@ export default function App() {
 			</View>
 
 			<TouchableHighlight style = {styles.addPopup} onPress={() => setPopupActive(true)}>
-				<Text style = {styles.popupX}> + </Text> 
+				<Text style = {styles.popupX}>📝</Text> 
 			</TouchableHighlight>
+
+			<TouchableHighlight style = {styles.logoutPopup} onPress={() => logout()}>
+				<Text style = {styles.popupX}>🔚</Text> 
+			</TouchableHighlight>
+
+			<TouchableHighlight style = {styles.loginPopup} onPress={() => setLoginActive(true)}>
+				<Text style = {styles.popupX}> 👤 </Text> 
+			</TouchableHighlight>
+
+			<TouchableHighlight style = {styles.registerPopup} onPress={() => setRegisterActive(true)}>
+				<Text style = {styles.popupX}> ✖️ </Text> 
+			</TouchableHighlight>
+
 
 			{popupActive ? (
 				<View style = {styles.popup}>
@@ -100,10 +205,72 @@ export default function App() {
 							onChange={e => setNewTodo(e.target.value)}
 							value={newTodo}
 							placeholder="Type in a todo ..."
-							keyboardType="numeric"
 						/>
 						<Pressable style = {styles.button} onPress = {addTodo}>
 							<Text style = {styles.popupX}> Submit </Text> 
+						</Pressable>
+					</View>
+				</View>
+			) : null}
+
+			{loginActive ? (
+				<View style = {styles.popup}>
+					<TouchableHighlight style = {styles.closePopup} onPress={() => setLoginActive(false)}>
+						<Text style = {styles.popupText}> x </Text> 
+					</TouchableHighlight>
+					
+					<View style = {styles.content}>
+						<Text style = {styles.subHeader}> Log in </Text>
+						<TextInput
+							style={styles.addTodoInput}
+							onChange={e => setUsername(e.target.value)}
+							value={username}
+							placeholder="Type in a username ..."
+						/>
+						<TextInput
+							secureTextEntry = {true}
+							style={styles.addTodoInput}
+							onChange={e => setPassword(e.target.value)}
+							value={password}
+							placeholder="Type in a password ..."
+						/>
+						<Pressable style = {styles.button} onPress = {login}>
+							<Text style = {styles.popupX}> Log in </Text> 
+						</Pressable>
+					</View>
+				</View>
+			) : null}
+		
+		
+			{registerActive ? (
+				<View style = {styles.popup}>
+					<TouchableHighlight style = {styles.closePopup} onPress={() => setRegisterActive(false)}>
+						<Text style = {styles.popupText}> x </Text> 
+					</TouchableHighlight>
+					
+					<View style = {styles.content}>
+						<Text style = {styles.subHeader}> Register </Text>
+						<TextInput
+							style={styles.addTodoInput}
+							onChange={e => setRegEmail(e.target.value)}
+							value={regEmail}
+							placeholder="Type in an email ..."
+						/>
+						<TextInput
+							style={styles.addTodoInput}
+							onChange={e => setRegUsername(e.target.value)}
+							value={regUsername}
+							placeholder="Type in a username ..."
+						/>
+						<TextInput
+							secureTextEntry = {true}
+							style={styles.addTodoInput}
+							onChange={e => setRegPassword(e.target.value)}
+							value={regPassword}
+							placeholder="Type in a password ..."
+						/>
+						<Pressable style = {styles.button} onPress = {register}>
+							<Text style = {styles.popupX}> Register </Text> 
 						</Pressable>
 					</View>
 				</View>
@@ -189,6 +356,39 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginLeft: 16
     },
+	loginPopup: {
+		position: 'absolute',
+        bottom: 32,
+        right: 128,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: colors.light
+	},
+	logoutPopup: {
+		position: 'absolute',
+        bottom: 128,
+        right: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: colors.light
+	},
+	registerPopup: {
+		position: 'absolute',
+        bottom: 128,
+        right: 128,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: colors.light
+	},
     addPopup: {
         position: 'absolute',
         bottom: 32,
