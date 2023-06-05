@@ -38,7 +38,6 @@ app.post('/todo/new', (req, res) => {
     })
 
     entry.save();
-
     res.json(entry);
 })
 
